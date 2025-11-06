@@ -2,12 +2,25 @@ import math
 import random
 from collections import deque
 from typing import Tuple, List, Dict, Optional
+import json
 
 # return formats
 
 Cell = Tuple[int, int]
 Grid = List[List[int]]
 
+def to_json(grid: Grid, start: Cell, goal: Cell, metrics: Dict, file_name = "maze.json") -> Dict:
+    
+    json_data = {
+        "maze": grid,
+        "start": list(start),
+        "goal": list(goal),
+        "metrics": metrics,
+    }
+
+    with open(file_name, 'w') as f:
+
+        json.dump(json_data, f, indent=4)
 
 class RandomMazeGenerator:
 
@@ -470,7 +483,7 @@ class RandomMazeGenerator:
 if __name__ == "__main__":
 
     generator = RandomMazeGenerator(
-        rows=21, cols=21, method="dfs", seed=42, braiding=0.2
+        rows=100, cols=100, method="dfs", seed=42, braiding=0.2
     )
     maze, start, goal, metrics = generator.generate()
 
@@ -486,3 +499,5 @@ if __name__ == "__main__":
         print("".join(line))
 
     print(f"Start: {start}, Goal: {goal}, Metrics: {metrics}")
+
+    to_json(maze, start, goal, metrics, file_name="generated_maze.json")
