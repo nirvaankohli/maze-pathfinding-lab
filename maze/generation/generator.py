@@ -9,8 +9,11 @@ import json
 Cell = Tuple[int, int]
 Grid = List[List[int]]
 
-def to_json(grid: Grid, start: Cell, goal: Cell, metrics: Dict, file_name = "maze.json") -> Dict:
-    
+
+def to_json(
+    grid: Grid, start: Cell, goal: Cell, metrics: Dict, file_name="maze.json"
+) -> Dict:
+
     json_data = {
         "maze": grid,
         "start": list(start),
@@ -18,9 +21,10 @@ def to_json(grid: Grid, start: Cell, goal: Cell, metrics: Dict, file_name = "maz
         "metrics": metrics,
     }
 
-    with open(file_name, 'w') as f:
+    with open(file_name, "w") as f:
 
         json.dump(json_data, f, indent=4)
+
 
 class RandomMazeGenerator:
 
@@ -76,8 +80,9 @@ class RandomMazeGenerator:
 
                 self.maze_recursive_backtracker(grid_try)
 
-            grid_try[start[0]][start[1]] = 0
-            grid_try[goal[0]][goal[1]] = 0
+            # ensure start/goal are passages (force open)
+            self._open_cell(grid_try, start[0], start[1], force=True)
+            self._open_cell(grid_try, goal[0], goal[1], force=True)
 
             if self.braiding > 0.0:
 
@@ -125,8 +130,9 @@ class RandomMazeGenerator:
 
                 self.maze_recursive_backtracker(grid)
 
-            grid[start[0]][start[1]] = 0
-            grid[goal[0]][goal[1]] = 0
+            # ensure start/goal are passages (force open)
+            self._open_cell(grid, start[0], start[1], force=True)
+            self._open_cell(grid, goal[0], goal[1], force=True)
 
             if self.braiding > 0.0:
 
@@ -139,8 +145,18 @@ class RandomMazeGenerator:
             grid = best_grid
             metrics = best_metrics or {}
 
-            # try to make the chosen maze harder without breaking
-            # solvability by selectively closing passages
+
+            try:
+                densify_attempts = max(50, (rows * cols) // 4)
+                # scale by braiding parameter to respect user's desired braiding
+                intensity = int(
+                    densify_attempts * (0.5 + 1.5 * min(1.0, self.braiding))
+                )
+                self.densify_loops(grid, attempts=intensity)
+            except Exception:
+                pass
+
+
             try:
                 aggravate_attempts = max(10, (rows * cols) // 10)
                 self.aggravate(grid, start, goal, aggravate_attempts)
@@ -175,13 +191,40 @@ class RandomMazeGenerator:
                 hr, hc = dr // 2, dc // 2
                 yield (nr, nc, hr, hc)
 
+    def _creates_2x2_if_open(self, grid: Grid, r: int, c: int) -> bool:
+        rows, cols = len(grid), len(grid[0])
+        for dr in (0, -1):
+            for dc in (0, -1):
+                sr, sc = r + dr, c + dc
+                if sr < 0 or sc < 0 or sr + 1 >= rows or sc + 1 >= cols:
+                    continue
+
+                zeros = 0
+                for rr in (sr, sr + 1):
+                    for cc in (sc, sc + 1):
+                        if (rr, cc) == (r, c):
+                            zeros += 1
+                        elif grid[rr][cc] == 0:
+                            zeros += 1
+                if zeros == 4:
+                    return True
+        return False
+
+    def _open_cell(self, grid: Grid, r: int, c: int, force: bool = False) -> bool:
+        if grid[r][c] == 0:
+            return True
+        if not force and self._creates_2x2_if_open(grid, r, c):
+            return False
+        grid[r][c] = 0
+        return True
+
     def maze_recursive_backtracker(self, grid: Grid) -> None:
 
         rows, cols = len(grid), len(grid[0])
 
         start = (1, 1)  # starting cell
         stack = [start]
-        grid[start[0]][start[1]] = 0  # so u can actually start at the start
+        self._open_cell(grid, start[0], start[1], force=True)  # ensure start is open
 
         while stack:
 
@@ -199,10 +242,25 @@ class RandomMazeGenerator:
 
                 continue
 
-            nr, nc, hr, hc = random.choice(candidates)
+            # prefer candidates that won't create 2x2 open blocks
+            viable = []
+            for nr, nc, hr, hc in candidates:
+                wr, wc = r + hr, c + hc
+                if not self._creates_2x2_if_open(
+                    grid, wr, wc
+                ) and not self._creates_2x2_if_open(grid, nr, nc):
+                    viable.append((nr, nc, hr, hc))
 
-            grid[r + hr][c + hc] = 0  # remove wall
-            grid[nr][nc] = 0  # mark cell as passage
+            if viable:
+                nr, nc, hr, hc = random.choice(viable)
+                self._open_cell(grid, r + hr, c + hc)
+                self._open_cell(grid, nr, nc)
+            else:
+                nr, nc, hr, hc = random.choice(candidates)
+                # force open if no safe candidate exists
+                self._open_cell(grid, r + hr, c + hc, force=True)
+                self._open_cell(grid, nr, nc, force=True)
+
             stack.append((nr, nc))
 
     # prim maze generation
@@ -212,7 +270,7 @@ class RandomMazeGenerator:
         rows, cols = len(grid), len(grid[0])
 
         start = (1, 1)  # starting cell
-        grid[start[0]][start[1]] = 0  # starting again
+        self._open_cell(grid, start[0], start[1], force=True)  # starting again
 
         walls: List[Tuple[int, int, int, int]] = []
 
@@ -232,9 +290,18 @@ class RandomMazeGenerator:
 
             if grid[nr][nc] == 1:
 
-                grid[wr][wc] = 0  # remove wall
-                grid[nr][nc] = 0  # mark cell as passage
-                add_walls(nr, nc)
+                # prefer openings that don't create 2x2 open blocks
+                if not self._creates_2x2_if_open(
+                    grid, wr, wc
+                ) and not self._creates_2x2_if_open(grid, nr, nc):
+                    self._open_cell(grid, wr, wc)
+                    self._open_cell(grid, nr, nc)
+                    add_walls(nr, nc)
+                else:
+                    # no safe option; force open to keep algorithm progressing
+                    self._open_cell(grid, wr, wc, force=True)
+                    self._open_cell(grid, nr, nc, force=True)
+                    add_walls(nr, nc)
 
     # braid - to reduce dead ends
 
@@ -296,7 +363,11 @@ class RandomMazeGenerator:
                 continue
 
             wr, wc = random.choice(wall_candidates)
-            grid[wr][wc] = 0  # remove wall
+            # try safe open, otherwise force
+            if not self._creates_2x2_if_open(grid, wr, wc):
+                self._open_cell(grid, wr, wc)
+            else:
+                self._open_cell(grid, wr, wc, force=True)
 
     # solvability helpers
 
@@ -337,43 +408,50 @@ class RandomMazeGenerator:
         return False
 
     def carve_path(self, grid: Grid, start: Cell, goal: Cell) -> None:
-
         rows, cols = len(grid), len(grid[0])
         sr, sc = start
         gr, gc = goal
 
-        q = deque([(sr, sc)])
-        prev = {(sr, sc): None}
+        def bfs(allow_unsafe: bool):
+            q = deque([(sr, sc)])
+            prev = {(sr, sc): None}
+            while q:
+                r, c = q.popleft()
+                if (r, c) == (gr, gc):
+                    return prev
+                for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in prev:
+                        if grid[nr][nc] == 0:
+                            prev[(nr, nc)] = (r, c)
+                            q.append((nr, nc))
+                        else:
+                            # it's a wall; only consider if opening it won't
+                            # create a 2x2, or if we allow unsafe openings.
+                            if allow_unsafe or not self._creates_2x2_if_open(
+                                grid, nr, nc
+                            ):
+                                prev[(nr, nc)] = (r, c)
+                                q.append((nr, nc))
+            return None
 
-        found = False
+        prev = bfs(False)
+        used_unsafe = False
+        if prev is None:
+            prev = bfs(True)
+            used_unsafe = True
 
-        while q:
-
-            r, c = q.popleft()
-
-            if (r, c) == (gr, gc):
-
-                found = True
-                break
-
-            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-
-                nr, nc = r + dr, c + dc
-
-                if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in prev:
-
-                    prev[(nr, nc)] = (r, c)
-                    q.append((nr, nc))
-
-        if not found:
-            # Shouldn't happen on a bounded grid, but guard anyway.
+        if prev is None:
+            # no path found even allowing unsafe openings
             return
 
-        # Reconstruct path and carve it.
+        # Reconstruct path and carve it. Prefer safe opens; if we used unsafe
+        # BFS then allow force opening.
         cur = (gr, gc)
         while cur is not None:
             r, c = cur
-            grid[r][c] = 0
+            if grid[r][c] == 1:
+                self._open_cell(grid, r, c, force=used_unsafe)
             cur = prev[cur]
 
     def path_length(self, grid: Grid, start: Cell, goal: Cell) -> Optional[int]:
@@ -440,6 +518,50 @@ class RandomMazeGenerator:
                 # revert
                 grid[r][c] = 0
 
+    def densify_loops(self, grid: Grid, attempts: int = 200) -> None:
+        """Try to add loops by removing suitable wall cells. We prefer
+        removals that connect two or more distinct passages and do not
+        create 2x2 open blocks (keep passages one-cell-wide when possible).
+        The method is opportunistic and randomized.
+        """
+
+        rows, cols = len(grid), len(grid[0])
+
+        # Collect candidate wall cells (not border)
+        candidates = [
+            (r, c)
+            for r in range(1, rows - 1)
+            for c in range(1, cols - 1)
+            if grid[r][c] == 1
+        ]
+
+        if not candidates:
+            return
+
+        for _ in range(attempts):
+            r, c = random.choice(candidates)
+
+            # count distinct passage neighbors and opposite-side connections
+            neigh_pass = 0
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 0:
+                    neigh_pass += 1
+
+            # we want removals that actually create loops / alternative paths
+            if neigh_pass < 2:
+                continue
+
+            # avoid creating 2x2 open blocks
+            if self._creates_2x2_if_open(grid, r, c):
+                # occasionally force if randomness desires more loops
+                if random.random() < 0.05:
+                    self._open_cell(grid, r, c, force=True)
+                continue
+
+            # open safely
+            self._open_cell(grid, r, c)
+
     # maze metrics
 
     def maze_metrics(self, grid: Grid) -> Dict[str, int]:
@@ -483,7 +605,7 @@ class RandomMazeGenerator:
 if __name__ == "__main__":
 
     generator = RandomMazeGenerator(
-        rows=100, cols=100, method="dfs", seed=42, braiding=0.2
+        rows=40, cols=40, method="dfs", seed=42, braiding=0.2
     )
     maze, start, goal, metrics = generator.generate()
 
