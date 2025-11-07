@@ -104,6 +104,7 @@ def build_result(
     heuristic: str = "",
     frontier_peak=None,
     true_costs=None,
+    if_grid=True,
 ) -> Dict:
 
     success = bool(path and goal in path)

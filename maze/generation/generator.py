@@ -605,7 +605,7 @@ class RandomMazeGenerator:
 if __name__ == "__main__":
 
     generator = RandomMazeGenerator(
-        rows=40, cols=40, method="dfs", seed=42, braiding=0.2
+        rows=100, cols=100, method="dfs", seed=42, braiding=0.2
     )
     maze, start, goal, metrics = generator.generate()
 
@@ -618,6 +618,7 @@ if __name__ == "__main__":
                 line.append("G")
             else:
                 line.append("#" if cell == 1 else " ")
+
         print("".join(line))
 
     print(f"Start: {start}, Goal: {goal}, Metrics: {metrics}")
