@@ -64,6 +64,12 @@ class solver:
             frontier_peak=self.frontier_peak,
         )
 
+    def to_file(self, file_path: Path) -> None:
+        result = self.get_result()
+        with open(file_path, "w") as f:
+            json.dump(result, f, indent=4)
+
+
 if __name__ == "__main__":
 
     example_path = (
