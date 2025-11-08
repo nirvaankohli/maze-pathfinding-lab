@@ -27,6 +27,7 @@
   --maze-border: rgba(255, 255, 255, 0.03);
   --maze-pre-bg: rgba(255, 255, 255, 0.01);
   --grid-line: rgba(255, 255, 255, 0.01);
+  --success: #2ecc71;
 
   /* solid backgrounds (no transparency) */
   --panel-bg-solid: #0b1220;
@@ -43,7 +44,6 @@
 * {
   box-sizing: border-box;
 }
-/* smooth transitions for UI (applies broadly) */
 *,
 *::before,
 *::after {
@@ -72,6 +72,35 @@ body {
   display: grid;
   grid-template-columns: 360px 1fr;
   gap: 1.5rem;
+  /* make form controls visually match the multiselect control */
+  .controls .row select,
+  .controls .row input[type="number"],
+  .controls .row input[type="text"],
+  .controls .row input[type="range"] {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    color: inherit;
+    font-size: 0.95rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* keep the generate button styled but align shape/height with controls */
+  #generate {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    color: inherit;
+    font-size: 0.95rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   align-items: start;
 }
 
@@ -109,8 +138,7 @@ h1#title {
   margin: 0;
   font-size: 3rem;
   letter-spacing: -0.02em;
-  font-weight: 700;
-  font-family: "Libre Baskerville", serif;
+  font-family: "Courier New", serif;
   color: var(--title-color);
 }
 
@@ -220,7 +248,7 @@ h1#title {
 }
 select,
 input[type="range"],
-button {
+#generate {
   width: 100%;
   padding: 0.5rem 0.6rem;
   border-radius: 8px;
@@ -238,11 +266,16 @@ button {
   transition: all 1s;
 }
 
-button:hover {
+#generate:hover {
   border: 1px solid var(--primary);
   background: none;
   font-size: 0.9 rem;
   scale: 1.05;
+}
+
+#generate:disabled {
+  background: none;
+  border: none;
 }
 
 .main {
@@ -264,6 +297,28 @@ button:hover {
   padding: 1rem;
   overflow: auto;
   border: 1px solid var(--maze-border);
+}
+
+/* Maze table cells */
+.maze-table {
+  border-collapse: collapse;
+  display: inline-block;
+}
+.maze-table td {
+  padding: 0;
+  margin: 0;
+}
+.cell-wall {
+  background: #02122a;
+}
+.cell-path {
+  background: #ffffff;
+}
+.cell-start {
+  background: var(--success) !important;
+}
+.cell-goal {
+  background: var(--success) !important;
 }
 
 .maze-pre {

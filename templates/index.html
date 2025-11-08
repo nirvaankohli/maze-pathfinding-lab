@@ -6,7 +6,7 @@
     <title>Maze Solver Comparison</title>
     <link
       rel="stylesheet"
-      href="C:\Users\nirva\OneDrive\Projects\Maze-Solver(Comparison)\maze-pathfinding-lab\static\index.css"
+      href="{{ url_for('static', filename='index.css') }}"
     />
   </head>
   <body>
@@ -65,13 +65,13 @@
                   >
                   <label class="ms-option"
                     ><input type="checkbox" name="algorithm" value="Dijkstra" />
-                    <span>Dijkstra</span></label>
+                    <span>Dijkstra</span></label
+                  >
 
-                    <label class="ms-option"
+                  <label class="ms-option"
                     ><input type="checkbox" name="algorithm" value="GBFS" />
-                    <span>GBFS</span></label>
-
-
+                    <span>GBFS</span></label
+                  >
                 </div>
               </div>
               <small
@@ -83,12 +83,26 @@
           </div>
 
           <div class="row">
-            <div class="label">Size</div>
-            <select id="size">
-              <option>21 x 21</option>
-              <option>41 x 41</option>
-              <option>81 x 81</option>
+            <div class="label">Rows</div>
+            <input id="rows" type="number" min="5" step="2" value="21" />
+          </div>
+
+          <div class="row">
+            <div class="label">Cols</div>
+            <input id="cols" type="number" min="5" step="2" value="21" />
+          </div>
+
+          <div class="row">
+            <div class="label">Method</div>
+            <select id="method">
+              <option value="dfs">DFS</option>
+              <option value="prim">Prim</option>
             </select>
+          </div>
+
+          <div class="row">
+            <div class="label">Seed</div>
+            <input id="seed" type="text" placeholder="random" />
           </div>
 
           <div class="row">
@@ -104,7 +118,9 @@
           </div>
 
           <div class="row">
-            <button id="generate">Generate Maze</button>
+            <button id="generate" onclick="generateMaze()">
+              Generate Maze
+            </button>
           </div>
         </div>
       </aside>
@@ -119,6 +135,9 @@
           <div class="metrics" id="metrics">
             <div class="metric">Start: <span id="start">-</span></div>
             <div class="metric">Goal: <span id="goal">-</span></div>
+            <div class="metric">
+              Path length: <span id="path_length">-</span>
+            </div>
             <div class="metric">Dead ends: <span id="dead_ends">-</span></div>
             <div class="metric">Junctions: <span id="junctions">-</span></div>
           </div>
@@ -126,69 +145,189 @@
       </main>
     </div>
     <script>
+      const root = document.getElementById("algorithm-select");
+      const control = root.querySelector(".ms-control");
+      const dropdown = root.querySelector(".ms-dropdown");
+      const chips = root.querySelector(".ms-chips");
+      const inputs = Array.from(
+        root.querySelectorAll('input[name="algorithm"]')
+      );
 
-(function () {
-        const root = document.getElementById("algorithm-select");
-        if (!root) return;
-        const control = root.querySelector(".ms-control");
-        const dropdown = root.querySelector(".ms-dropdown");
-        const chips = root.querySelector(".ms-chips");
-        const inputs = Array.from(
-          root.querySelectorAll('input[name="algorithm"]')
-        );
+      function renderChips() {
+        chips.innerHTML = "";
+        const selected = inputs.filter((i) => i.checked).map((i) => i.value);
+        if (selected.length === 0) {
+          chips.textContent = "None selected";
+          chips.classList.add("ms-placeholder");
+          return;
+        }
+        chips.classList.remove("ms-placeholder");
+        selected.forEach((val) => {
+          const el = document.createElement("span");
+          el.className = "ms-chip";
+          el.textContent = val;
+          el.tabIndex = 0;
+          el.setAttribute("data-value", val);
 
-        function renderChips() {
-          chips.innerHTML = "";
-          const selected = inputs.filter((i) => i.checked).map((i) => i.value);
-          if (selected.length === 0) {
-            chips.textContent = "None selected";
-            chips.classList.add("ms-placeholder");
-            return;
-          }
-          chips.classList.remove("ms-placeholder");
-          selected.forEach((val) => {
-            const el = document.createElement("span");
-            el.className = "ms-chip";
-            el.textContent = val;
-            el.tabIndex = 0;
-            el.setAttribute("data-value", val);
-
-            el.addEventListener("click", () => {
-              const input = inputs.find((i) => i.value === val);
-              if (input) {
-                input.checked = false;
-                renderChips();
-              }
-            });
-            chips.appendChild(el);
+          el.addEventListener("click", () => {
+            const input = inputs.find((i) => i.value === val);
+            if (input) {
+              input.checked = false;
+              renderChips();
+            }
           });
-        }
+          chips.appendChild(el);
+        });
+      }
 
-        function toggle(open) {
-          const isOpen = root.classList.contains("ms-open");
-          const want = open === undefined ? !isOpen : !!open;
-          root.classList.toggle("ms-open", want);
-          control.setAttribute("aria-expanded", want ? "true" : "false");
-        }
+      async function generateMaze() {
+        const rowsEl = document.getElementById("rows");
+        const colsEl = document.getElementById("cols");
+        const methodEl = document.getElementById("method");
+        const seedEl = document.getElementById("seed");
+        const braidEl = document.getElementById("braid");
+        const display = document.getElementById("maze");
+        const button = document.getElementById("generate");
+        button.disabled = true;
+        button.textContent = "Generating Maze...";
+        display.innerHTML = "Be patient... Maze is generating...";
 
-        control.addEventListener("click", () => toggle());
-        control.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            toggle();
+        try {
+          const algs = inputs
+            .filter((i) => i.checked)
+            .map((i) => i.value)
+            .join(",");
+          const params = new URLSearchParams();
+          params.set("rows", rowsEl.value);
+          params.set("cols", colsEl.value);
+          params.set("method", methodEl.value);
+          if (seedEl.value && seedEl.value.trim() !== "")
+            params.set("seed", seedEl.value.trim());
+          params.set("braiding", braidEl.value);
+          if (algs) params.set("algorithms", algs);
+
+          const response = await fetch(`/maze/generate?${params.toString()}`);
+          // try parse JSON response
+          let obj;
+          try {
+            obj = await response.json();
+          } catch (e) {
+            const text = await response.text();
+            obj = JSON.parse(text);
           }
-        });
 
-        inputs.forEach((i) => {
-          i.addEventListener("change", () => renderChips());
-        });
+          // extract maze and metadata (be permissive to several key names)
+          const mazeArray = obj.maze || obj.grid || obj;
+          const start = obj.start || obj.start_pos || obj.startPos || null;
+          const goal = obj.goal || obj.goal_pos || obj.goalPos || null;
+          const metrics = obj.metrics || {
+            dead_ends: obj.dead_ends || obj.deadEnds || "-",
+            junctions: obj.junctions || obj.junctions || "-",
+          };
 
-        document.addEventListener("click", (e) => {
-          if (!root.contains(e.target)) toggle(false);
-        });
+          // fill stats
+          const startEl = document.getElementById("start");
+          const goalEl = document.getElementById("goal");
+          const deadEl = document.getElementById("dead_ends");
+          const junEl = document.getElementById("junctions");
+          startEl.textContent = start
+            ? Array.isArray(start)
+              ? `${start[0]}, ${start[1]}`
+              : JSON.stringify(start)
+            : "-";
+          goalEl.textContent = goal
+            ? Array.isArray(goal)
+              ? `${goal[0]}, ${goal[1]}`
+              : JSON.stringify(goal)
+            : "-";
+          deadEl.textContent = metrics.dead_ends ?? metrics.deadEnds ?? "-";
+          junEl.textContent = metrics.junctions ?? metrics.junctions ?? "-";
+          const pathEl = document.getElementById("path_length");
+          pathEl.textContent = metrics.path_length ?? metrics.pathLength ?? "-";
 
-        renderChips();
-      })();
+          display.innerHTML = "";
+          displayMaze(mazeArray, display, parseInt(colsEl.value), start, goal);
+          button.disabled = false;
+          button.textContent = "Generate Maze";
+        } catch (error) {
+          console.log("Error fetching/processing response: ", error);
+          button.disabled = false;
+          button.textContent = "Generate Maze";
+        }
+      }
+
+      function displayMaze(mazeArray, container, amount, start, goal) {
+
+        const table = document.createElement("table");
+        table.className = "maze-table";
+        table.style.borderCollapse = "collapse";
+
+
+        const containerWidth =
+          container.clientWidth ||
+          Math.max(
+            200,
+            parseInt(window.getComputedStyle(container).width) || 400
+          );
+        const cellSize = Math.max(4, Math.floor(containerWidth / amount));
+
+        for (let r = 0; r < mazeArray.length; r++) {
+          const row = mazeArray[r];
+          const tr = document.createElement("tr");
+          for (let c = 0; c < row.length; c++) {
+            const cell = row[c];
+            const td = document.createElement("td");
+            td.style.width = cellSize + "px";
+            td.style.height = cellSize + "px";
+            td.className = cell === 1 ? "cell-wall" : "cell-path";
+
+
+            if (
+              start &&
+              Array.isArray(start) &&
+              start[0] === r &&
+              start[1] === c
+            ) {
+              td.classList.add("cell-start");
+            }
+            if (goal && Array.isArray(goal) && goal[0] === r && goal[1] === c) {
+              td.classList.add("cell-goal");
+            }
+
+            tr.appendChild(td);
+          }
+          table.appendChild(tr);
+        }
+
+
+        container.innerHTML = "";
+        container.appendChild(table);
+      }
+
+      function toggle(open) {
+        const isOpen = root.classList.contains("ms-open");
+        const want = open === undefined ? !isOpen : !!open;
+        root.classList.toggle("ms-open", want);
+        control.setAttribute("aria-expanded", want ? "true" : "false");
+      }
+
+      control.addEventListener("click", () => toggle());
+      control.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle();
+        }
+      });
+
+      inputs.forEach((i) => {
+        i.addEventListener("change", () => renderChips());
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!root.contains(e.target)) toggle(false);
+      });
+
+      renderChips();
     </script>
   </body>
 </html>

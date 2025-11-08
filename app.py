@@ -9,6 +9,7 @@ def home():
 
     return render_template("index.html")
 
+
 # maze api /maze
 
 
@@ -44,20 +45,34 @@ def generate_maze():
     """
 
     params = request.args
-
     params_dict = params.to_dict()
 
+    rows = int(params_dict.get("rows", 21))
+    cols = int(params_dict.get("cols", 21))
+    method = params_dict.get("method", "dfs")
+    seed_raw = params_dict.get("seed")
+    seed = int(seed_raw) if seed_raw is not None and seed_raw != "" else None
+    try:
+        braiding = float(params_dict.get("braiding", 0.2))
+    except Exception:
+        braiding = 0.2
+
     generator = RandomMazeGenerator(
-        rows=params_dict.get("rows", 21),
-        cols=params_dict.get("cols", 21),
-        method=params_dict.get("method", "dfs"),
-        seed=params_dict.get("seed", 42),
-        braiding=params_dict.get("braiding", 0.2),
+        rows=rows, cols=cols, method=method, seed=seed, braiding=braiding
     )
 
     maze, start, goal, metrics = generator.generate()
 
-    return {"maze": maze, "start": start, "goal": goal, "metrics": metrics}
+    path_len = generator._path_length(maze, start, goal) or 0
+    metrics_out = dict(metrics)
+    metrics_out.setdefault("path_length", path_len)
+
+    return {
+        "maze": maze,
+        "start": list(start),
+        "goal": list(goal),
+        "metrics": metrics_out,
+    }
 
 
 @app.route("/maze/blank")
@@ -66,18 +81,12 @@ def blank_maze():
     params = request.args
     params_dict = params.to_dict()
 
+    rows = int(params_dict.get("rows", 21))
+    cols = int(params_dict.get("cols", 21))
     generator = RandomMazeGenerator(
-        rows=params_dict.get("rows", 21),
-        cols=params_dict.get("cols", 21),
-        method="dfs",
-        seed=42,
-        braiding=0.2,
+        rows=rows, cols=cols, method="dfs", seed=None, braiding=0.0
     )
-
-    return generator.blank_grid(
-        rows=params_dict.get("rows", 21),
-        cols=params_dict.get("cols", 21),
-    )
+    return generator._blank_grid(rows, cols)
 
 
 if __name__ == "__main__":
