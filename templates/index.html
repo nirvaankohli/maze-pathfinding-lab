@@ -122,6 +122,11 @@
               Generate Maze
             </button>
           </div>
+          <div class="row">
+            <button id="run-algos" onclick="runAlgorithms()" disabled>
+              Run Algorithms
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -143,6 +148,17 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div id="algoModal" class="algo-modal" aria-hidden="true">
+      <div class="algo-modal-backdrop" onclick="closeAlgoModal()"></div>
+      <div class="algo-modal-panel">
+        <div class="algo-modal-header">
+          <h3>Algorithm Results</h3>
+          <button onclick="closeAlgoModal()">✕</button>
+        </div>
+        <div id="algoResults" class="algo-results"></div>
+      </div>
     </div>
     <script>
       const root = document.getElementById("algorithm-select");
@@ -247,6 +263,8 @@
 
           display.innerHTML = "";
           displayMaze(mazeArray, display, parseInt(colsEl.value), start, goal);
+          window.lastMazeObj = obj;
+          document.getElementById("run-algos").disabled = false;
           button.disabled = false;
           button.textContent = "Generate Maze";
         } catch (error) {
@@ -257,11 +275,9 @@
       }
 
       function displayMaze(mazeArray, container, amount, start, goal) {
-
         const table = document.createElement("table");
         table.className = "maze-table";
         table.style.borderCollapse = "collapse";
-
 
         const containerWidth =
           container.clientWidth ||
@@ -281,7 +297,6 @@
             td.style.height = cellSize + "px";
             td.className = cell === 1 ? "cell-wall" : "cell-path";
 
-
             if (
               start &&
               Array.isArray(start) &&
@@ -299,9 +314,119 @@
           table.appendChild(tr);
         }
 
-
         container.innerHTML = "";
         container.appendChild(table);
+      }
+
+      async function runAlgorithms() {
+        if (!window.lastMazeObj) return;
+        const algs = inputs.filter((i) => i.checked).map((i) => i.value);
+        const payload = {
+          maze:
+            window.lastMazeObj.maze ||
+            window.lastMazeObj.grid ||
+            window.lastMazeObj,
+          start: window.lastMazeObj.start || window.lastMazeObj.start_pos,
+          goal: window.lastMazeObj.goal || window.lastMazeObj.goal_pos,
+          algorithms: algs,
+        };
+
+        const runBtn = document.getElementById("run-algos");
+        runBtn.disabled = true;
+        runBtn.textContent = "Running...";
+        try {
+          const resp = await fetch("/maze/solve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json();
+          showAlgoResults(data.results || {});
+        } catch (e) {
+          console.error("Error running algorithms", e);
+          alert("Error running algorithms: " + e.message);
+        }
+        runBtn.disabled = false;
+        runBtn.textContent = "Run Algorithms";
+      }
+
+      function showAlgoResults(results) {
+
+        const container = document.getElementById("algoResults");
+
+        // clear previous
+    
+        container.innerHTML = "";
+
+        for (const [alg, res] of Object.entries(results)) {
+        
+        const card = document.createElement("div");
+          card.className = "algo-card";
+        
+          if (res.error) {
+        
+            card.innerHTML = `<h4>${alg}</h4><pre class='algo-error'>${res.error}</pre>`;
+        
+        } else {
+        
+            const outcome = res.outcome || {};
+            const effort = res.effort || {};
+            const pq = res.path_quality || {};
+            const cov = res.coverage || {};
+        
+            card.innerHTML = `
+              <h4>${alg} <small>${res.identity?.algorithm ?? ""}</small></h4>
+              <div class='algo-grid'>
+                <div><strong>Success</strong><div>${outcome.success}</div></div>
+                <div><strong>Path length</strong><div>${
+                  outcome.path_length ?? "-"
+                }</div></div>
+                <div><strong>Time (ms)</strong><div>${(
+                  effort.time_ms || 0
+                ).toFixed(2)}</div></div>
+                <div><strong>Visited</strong><div>${
+                  effort.visited_count ?? "-"
+                }</div></div>
+                <div><strong>Optimality gap</strong><div>${
+                  pq.optimality_gap == null ? "-" : pq.optimality_gap.toFixed(2)
+                }</div></div>
+                <div><strong>Exploration ratio</strong><div>${(
+                  cov.exploration_ratio || 0
+                ).toFixed(3)}</div></div>
+              </div>
+              <details><summary>Full result JSON</summary><pre>${escapeHtml(
+                JSON.stringify(res, null, 2)
+              )}</pre></details>
+            `;
+          }
+        
+          container.appendChild(card);
+        
+        }
+        
+        openAlgoModal();
+      
+    }
+
+      function openAlgoModal() {
+    
+        const m = document.getElementById("algoModal");
+    
+        m.setAttribute("aria-hidden", "false");
+        m.classList.add("open");
+    
+    }
+
+      function closeAlgoModal() {
+        const m = document.getElementById("algoModal");
+        m.setAttribute("aria-hidden", "true");
+        m.classList.remove("open");
+      }
+
+      function escapeHtml(s) {
+        return s.replace(/[&<>]/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c];
+        });
       }
 
       function toggle(open) {

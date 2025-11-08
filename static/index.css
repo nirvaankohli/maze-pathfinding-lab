@@ -374,3 +374,65 @@ button {
   font-size: 0.85rem;
   color: var(--muted);
 }
+
+.algo-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+}
+.algo-modal.open {
+  display: flex;
+}
+.algo-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.algo-modal-panel {
+  position: relative;
+  background: var(--panel-bg-solid);
+  border: 1px solid var(--panel-border);
+  padding: 1rem;
+  border-radius: 10px;
+  width: min(1100px, 96%);
+  max-height: 90vh;
+  overflow: auto;
+  z-index: 90;
+}
+.algo-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.algo-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.algo-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  padding: 0.75rem;
+  border-radius: 8px;
+  color: var(--fg);
+}
+.algo-card h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+.algo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1rem;
+}
+.algo-grid div {
+  background: transparent;
+}
+.algo-error {
+  color: var(--danger);
+}
