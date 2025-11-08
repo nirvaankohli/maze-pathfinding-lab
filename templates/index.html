@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maze Solver Comparison</title>
+    <link
+      rel="stylesheet"
+      href="C:\Users\nirva\OneDrive\Projects\Maze-Solver(Comparison)\maze-pathfinding-lab\static\index.css"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <div class="header">
+        <div class="logo">MS</div>
+        <div>
+          <h1 id="title">Maze Solver Comparison</h1>
+          <div class="subtitle small">
+            Compare pathfinding algorithms on randomized mazes — tuned for
+            difficulty
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="controls">
+          <div class="row">
+            <div class="label">Algorithms</div>
+            <div
+              id="algorithm-select"
+              class="multiselect"
+              aria-haspopup="listbox"
+            >
+              <div
+                class="ms-control"
+                tabindex="0"
+                role="button"
+                aria-expanded="false"
+              >
+                <div class="ms-chips" aria-live="polite"></div>
+                <div class="ms-caret">▾</div>
+              </div>
+              <div class="ms-dropdown" role="listbox">
+                <div class="ms-optgroup">
+                  <label class="ms-option"
+                    ><input
+                      type="checkbox"
+                      name="algorithm"
+                      value="DFS"
+                      checked
+                    />
+                    <span>DFS</span></label
+                  >
+                  <label class="ms-option"
+                    ><input type="checkbox" name="algorithm" value="BFS" />
+                    <span>BFS</span></label
+                  >
+                  <label class="ms-option"
+                    ><input type="checkbox" name="algorithm" value="A*" />
+                    <span>A*</span></label
+                  >
+                  <label class="ms-option"
+                    ><input type="checkbox" name="algorithm" value="JPS" />
+                    <span>JPS</span></label
+                  >
+                  <label class="ms-option"
+                    ><input type="checkbox" name="algorithm" value="Dijkstra" />
+                    <span>Dijkstra</span></label>
+
+                    <label class="ms-option"
+                    ><input type="checkbox" name="algorithm" value="GBFS" />
+                    <span>GBFS</span></label>
+
+
+                </div>
+              </div>
+              <small
+                class="small"
+                style="margin-top: 0.25rem; color: var(--muted)"
+                >Select one or more</small
+              >
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="label">Size</div>
+            <select id="size">
+              <option>21 x 21</option>
+              <option>41 x 41</option>
+              <option>81 x 81</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <div class="label">Braiding</div>
+            <input
+              id="braid"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.2"
+            />
+          </div>
+
+          <div class="row">
+            <button id="generate">Generate Maze</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="panel maze-wrap">
+          <div class="maze-display">
+            <pre id="maze" class="maze-pre">
+(Generate a maze to preview here)</pre
+            >
+          </div>
+          <div class="metrics" id="metrics">
+            <div class="metric">Start: <span id="start">-</span></div>
+            <div class="metric">Goal: <span id="goal">-</span></div>
+            <div class="metric">Dead ends: <span id="dead_ends">-</span></div>
+            <div class="metric">Junctions: <span id="junctions">-</span></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+
+(function () {
+        const root = document.getElementById("algorithm-select");
+        if (!root) return;
+        const control = root.querySelector(".ms-control");
+        const dropdown = root.querySelector(".ms-dropdown");
+        const chips = root.querySelector(".ms-chips");
+        const inputs = Array.from(
+          root.querySelectorAll('input[name="algorithm"]')
+        );
+
+        function renderChips() {
+          chips.innerHTML = "";
+          const selected = inputs.filter((i) => i.checked).map((i) => i.value);
+          if (selected.length === 0) {
+            chips.textContent = "None selected";
+            chips.classList.add("ms-placeholder");
+            return;
+          }
+          chips.classList.remove("ms-placeholder");
+          selected.forEach((val) => {
+            const el = document.createElement("span");
+            el.className = "ms-chip";
+            el.textContent = val;
+            el.tabIndex = 0;
+            el.setAttribute("data-value", val);
+
+            el.addEventListener("click", () => {
+              const input = inputs.find((i) => i.value === val);
+              if (input) {
+                input.checked = false;
+                renderChips();
+              }
+            });
+            chips.appendChild(el);
+          });
+        }
+
+        function toggle(open) {
+          const isOpen = root.classList.contains("ms-open");
+          const want = open === undefined ? !isOpen : !!open;
+          root.classList.toggle("ms-open", want);
+          control.setAttribute("aria-expanded", want ? "true" : "false");
+        }
+
+        control.addEventListener("click", () => toggle());
+        control.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggle();
+          }
+        });
+
+        inputs.forEach((i) => {
+          i.addEventListener("change", () => renderChips());
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!root.contains(e.target)) toggle(false);
+        });
+
+        renderChips();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,321 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap");
+
+:root {
+  /* base palette (kept from original) */
+  --dark: #191919;
+  --light: #ccd4db;
+  --primary: #736ee1;
+  --secondary: #eb5855;
+  --glass: rgba(255, 255, 255, 0.04);
+  --muted: #9aa6b2;
+  --danger: #ff6b6b;
+  --mono: "Courier New", Courier, monospace;
+  color-scheme: dark;
+  --bg: var(--dark);
+  --fg: var(--light);
+  --panel-bg: rgba(255, 255, 255, 0.02);
+  --panel-border: rgba(255, 255, 255, 0.04);
+  --panel-inset: rgba(255, 255, 255, 0.01);
+  --panel-shadow: rgba(2, 6, 23, 0.6);
+  --logo-bg: var(--primary);
+  --logo-fg: #02122a;
+  --logo-shadow: rgba(115, 110, 225, 0.12);
+  --title-color: var(--primary);
+  --button-bg: var(--primary);
+  --button-fg: #02122a;
+  --maze-bg: rgba(2, 6, 23, 0.2);
+  --maze-border: rgba(255, 255, 255, 0.03);
+  --maze-pre-bg: rgba(255, 255, 255, 0.01);
+  --grid-line: rgba(255, 255, 255, 0.01);
+
+  /* solid backgrounds (no transparency) */
+  --panel-bg-solid: #0b1220;
+
+  /* neon shadows */
+  --neon-1: rgba(115, 110, 225, 0.14);
+  --neon-2: rgba(115, 110, 225, 0.06);
+
+  /* compatibility aliases */
+  --accent: var(--primary);
+  --accent-2: var(--secondary);
+}
+
+* {
+  box-sizing: border-box;
+}
+/* smooth transitions for UI (applies broadly) */
+*,
+*::before,
+*::after {
+  transition: background-color 200ms ease, color 200ms ease,
+    border-color 200ms ease, box-shadow 200ms ease, transform 150ms ease,
+    opacity 200ms ease;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Inter, "Libre Baskerville", system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial;
+  background-color: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 2rem;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.panel {
+  background: var(--panel-bg);
+  min-height: 70vh;
+  border: 1px solid var(--panel-border);
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 30px var(--panel-shadow), inset 0 1px 0 var(--panel-inset);
+}
+
+.header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background-color: var(--logo-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--logo-fg);
+  box-shadow: 0 8px 30px var(--logo-shadow);
+}
+
+h1#title {
+  margin: 0;
+  font-size: 3rem;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  font-family: "Libre Baskerville", serif;
+  color: var(--title-color);
+}
+
+.subtitle {
+  color: var(--muted);
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  min-width: 80px;
+}
+/* Multiselect (Streamlit-like) */
+.multiselect {
+  position: relative;
+  min-width: 220px;
+}
+.ms-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+.ms-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ms-placeholder {
+  color: var(--muted);
+}
+.ms-chip {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.ms-caret {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 700;
+}
+.ms-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  /* solid background to avoid transparency */
+  background: var(--panel-bg-solid);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  max-height: 220px;
+  overflow: auto;
+  z-index: 40;
+  /* animate via opacity/transform so transitions work */
+  opacity: 0;
+  transform: translateY(-6px) scale(0.995);
+  pointer-events: none;
+  visibility: hidden;
+}
+.ms-open .ms-dropdown {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+}
+.ms-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.ms-option input {
+  width: 16px;
+  height: 16px;
+}
+.ms-option:hover {
+  background: rgba(255, 255, 255, 0.01);
+  transform: translateX(4px);
+}
+.ms-chip:hover {
+  transform: scale(1.04);
+  border-color: var(--primary);
+}
+select,
+input[type="range"],
+button {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  color: inherit;
+  font-size: 0.95rem;
+}
+button {
+  font-family: "Courier New", Courier, monospace;
+  cursor: pointer;
+  background: var(--button-bg);
+  border: none;
+  border: 1px solid var(--light);
+  font-weight: 700;
+  font-style: italic;
+  transition: all 1s;
+}
+
+button:hover {
+  border: 1px solid var(--primary);
+  background: none;
+  font-size: 0.9 rem;
+  scale: 1.05;
+}
+
+.main {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.maze-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.maze-display {
+  flex: 1;
+  background-color: var(--maze-bg);
+  border-radius: 12px;
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid var(--maze-border);
+}
+
+.maze-pre {
+  font-family: var(--mono);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: pre;
+  display: block;
+  color: var(--fg);
+  background-color: var(--maze-pre-bg);
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+.metrics {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+.metric {
+  background: var(--glass);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--panel-inset);
+  color: var(--muted);
+}
+
+/* responsive */
+@media (max-width: 980px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    padding: 1rem;
+  }
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: none;
+  opacity: 0;
+}
+
+/* neon glow for important pieces */
+.neon {
+  text-shadow: 0 0 12px var(--neon-1), 0 0 28px var(--neon-2);
+}
+
+.small {
+  font-size: 0.85rem;
+  color: var(--muted);
+}

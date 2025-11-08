@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, render_template, request
 from maze.generation.generator import RandomMazeGenerator
 
 app = Flask(__name__)
@@ -7,8 +7,7 @@ app = Flask(__name__)
 @app.route("/")
 def home():
 
-    return "this gon be something"
-
+    return render_template("index.html")
 
 # maze api /maze
 
