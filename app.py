@@ -12,6 +12,11 @@ def home():
     return render_template("index.html")
 
 
+@app.route("/results")
+def results():
+    return render_template("results.html")
+
+
 # maze api /maze
 
 
@@ -109,19 +114,16 @@ def solve_maze():
     goal = tuple(data.get("goal", (len(maze) - 2, len(maze[0]) - 2)))
     algorithms = data.get("algorithms", [])
 
-    # key 
+    # key
 
     name_map = {
-
         "DFS": "dfs",
         "BFS": "bfs",
         "A*": "a_star",
         "JPS": "jps",
         "Dijkstra": "dijkstra",
         "GBFS": "gbfs",
-
     }
-
 
     results = {}
 
@@ -134,19 +136,19 @@ def solve_maze():
     for alg in algorithms:
 
         mod_name = name_map.get(alg, alg.lower())
-        
+
         try:
-        
+
             # try new module import style
-        
+
             module = importlib.import_module(f"solve.maze.algo.{mod_name}")
             SolverClass = getattr(module, "solver", None)
-            
+
             if SolverClass is None:
-            
+
                 results[alg] = {"error": "solver class not found"}
                 continue
-            
+
             # instantiate solver and solve
 
             solver = SolverClass(grid=maze, start=tuple(start), goal=tuple(goal))
@@ -156,9 +158,9 @@ def solve_maze():
 
             res = solver.get_result()
             results[alg] = res
-        
+
         except Exception as e:
-        
+
             results[alg] = {"error": str(e)}
 
     return jsonify({"results": results})

@@ -72,57 +72,59 @@ body {
   display: grid;
   grid-template-columns: 360px 1fr;
   gap: 1.5rem;
-  /* make form controls visually match the multiselect control */
-  .controls .row select,
-  .controls .row input[type="number"],
-  .controls .row input[type="text"],
-  .controls .row input[type="range"] {
-    width: 100%;
-    padding: 6px 10px;
-    border-radius: 8px;
-    color: inherit;
-    font-size: 0.95rem;
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-  }
-
-  #run-algos {
-    width: 100%;
-    padding: 6px 10px;
-    border-radius: 8px;
-    color: inherit;
-    font-size: 0.95rem;
-    background: none;
-    border: 1px solid var(--primary);
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    text-align: center;
-    justify-content: center;
-  }
-
-  #run-algos:hover {
-    border: 1px solid var(--light);
-    background: var(--dark);
-    font-size: 0.9rem;
-    scale: 1.05;
-  }
-
-  #generate {
-    width: 100%;
-    padding: 6px 10px;
-    border-radius: 8px;
-    color: inherit;
-    font-size: 0.95rem;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
   align-items: start;
+}
+
+/* make form controls visually match the multiselect control */
+.controls .row select,
+.controls .row input[type="number"],
+.controls .row input[type="text"],
+.controls .row input[type="range"] {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: inherit;
+  font-size: 0.95rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* keep the run button styled to match controls */
+#run-algos {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: inherit;
+  font-size: 0.95rem;
+  background: none;
+  border: 1px solid var(--primary);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+}
+
+#run-algos:hover {
+  border: 1px solid var(--light);
+  background: var(--dark);
+  font-size: 0.9rem;
+  transform: scale(1.05);
+}
+
+#generate {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: inherit;
+  font-size: 0.95rem;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .panel {
@@ -159,10 +161,13 @@ h1#title {
   margin: 0;
   font-size: 3rem;
   letter-spacing: -0.02em;
-  font-family: "Courier New", serif;
+  font-family: "Courier New", Courier, monospace;
   color: var(--title-color);
 }
 
+h3 {
+  font-family: "Courier New", Courier, monospace;
+}
 .subtitle {
   color: var(--muted);
   margin-top: 0.25rem;
@@ -290,8 +295,8 @@ button {
 #generate:hover {
   border: 1px solid var(--primary);
   background: none;
-  font-size: 0.9 rem;
-  scale: 1.05;
+  font-size: 0.9rem;
+  transform: scale(1.05);
 }
 
 #generate:disabled {
@@ -318,6 +323,43 @@ button {
   padding: 1rem;
   overflow: auto;
   border: 1px solid var(--maze-border);
+}
+
+.maze-area {
+  position: relative;
+}
+.maze-container {
+  display: inline-block;
+}
+.maze-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.legend {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.legend .chip {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--panel-border);
+}
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 /* Maze table cells */
